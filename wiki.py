@@ -1,11 +1,11 @@
 import urllib.request
 from bs4 import BeautifulSoup
+import json
 
-# Function Finds which index we want to use
-def wikiArray(content):
-    for x in range(len(content)):
-        if '.' in content[x]:
-            return content[x]
+'''
+TODO --------------------------------
+- Handle Disambiguation Pages
+'''
 
 def wikiSearch(searchInput):
     apiUrl = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles="
@@ -38,7 +38,8 @@ def wikiSearch(searchInput):
     # Grabs the page from the wikipedia API, and prepares for operation
     pageObject = urllib.request.urlopen(apiUrl)
     page = BeautifulSoup(pageObject, "lxml")
-    stringPage = str(page)
+    stringPage = str(page)[15:-18]
+    datastore = json.loads(stringPage)
 
     if "\",\"missing\"" in stringPage:
         returnDataArray.append("This page cannot be found...")
@@ -51,25 +52,12 @@ def wikiSearch(searchInput):
         return returnDataArray
     else:
         # Grabs main paragraph, cutting away extra html
-        stringPageSplit = stringPage.split("{")
-
-        stringPage = wikiArray(stringPageSplit)
-
-        stringPageSplit = stringPage.split("}")
-
-        stringPage = wikiArray(stringPageSplit)
-
-        stringPageSplit = stringPage.split('":"')
-
-        stringPage = wikiArray(stringPageSplit)
-
-        stringPage = stringPage[:-1]
+        data = list(datastore["query"]["pages"].values())[0]["extract"]
 
         charCount = 0
-        reformat = stringPage.split(".")
+        reformat = data.split(".")
 
         formattedParagraph = ""
-
 
         # Keeps on placing sentances until one goes over the limit
         for x in range(len(reformat)):
