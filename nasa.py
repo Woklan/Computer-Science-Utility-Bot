@@ -1,8 +1,6 @@
+from ExtraFunctions import pageGet
 import json
-import urllib.request
 import requests
-import os
-from bs4 import BeautifulSoup
 import datetime
 import time
 
@@ -75,11 +73,12 @@ def nasaApod(command_handle, userMessage):
     url = url + 'api_key=' + nasaToken
     print(url)
 
-    # Opens and Formats the response page to grab the data needed
-    pageObject = urllib.request.urlopen(url)
-    page = BeautifulSoup(pageObject, "lxml")
-    formattedPage = str(page)[15:-18]
-    datastore = json.loads(formattedPage)
+    # [stringPage, datastore]
+    dataArray = pageGet(url)
+    if dataArray == 0:
+        return 0
+    else:
+        datastore = dataArray[1]
 
     # Chooses which URL to select
     if command_handle == 1 or command_handle == 3:

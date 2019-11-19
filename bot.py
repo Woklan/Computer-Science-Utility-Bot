@@ -1,9 +1,8 @@
 import discord
 import json
-import datetime
 
 # All commands used
-import BinaryModifications
+from ExtraFunctions import binaryPrep
 import binXor
 import binAnd
 import binOr
@@ -11,6 +10,7 @@ import ceaser
 import wiki
 import nasa
 import urbanDictionary
+import subnet
 
 # Grabs Discord Token from config.json
 with open("config.json") as config_json:
@@ -19,14 +19,15 @@ with open("config.json") as config_json:
 discordToken = configDictionary["discord_token"]
 
 class MyClient(discord.Client):
+    subnetFlag = False
+    subnetHold = []
+    subnetCount = 4
+
     async def on_ready(self):
         print('Logged on as {0}!'.format(self.user))
 
     async def on_message(self, message):
-
-        # Doesn't reply to itself
-        if message.author == self.user:
-            return
+        print(message.content)
 
         # Prints the line out when a user uses command
         if message.content.startswith('$'):
@@ -35,6 +36,33 @@ class MyClient(discord.Client):
         # Simple Hello Reply
         if message.content.startswith('$hello '):
             await message.channel.send('Hello World!')
+
+
+            # Handles the Extra Printing of the Subnetting Command
+        if message.author == self.user and MyClient.subnetFlag == True:
+            if len(MyClient.subnetHold) > MyClient.subnetCount:
+                MyClient.subnetCount = MyClient.subnetCount + 1
+                await message.channel.send("```" + MyClient.subnetHold[MyClient.subnetCount - 1] + "```")
+            else:
+                MyClient.subnetFlag = False
+                MyClient.subnetHold = []
+                MyClient.subnetCount = 3
+
+        # Doesn't reply to itself
+        if message.author == self.user:
+            return
+
+        # Subnets to as many subnetworks as you may like
+        if message.content.startswith('$subnet '):
+            userMessage = message.content[8:]
+            test = subnet.subnetting(userMessage)
+            if len(test) > 5:
+                MyClient.subnetFlag = True
+                MyClient.subnetHold = test
+                MyClient.subnetCount = MyClient.subnetCount + 1
+                await message.channel.send("```# of subnets: " + str(test[1]) + "\n# of Hosts per Subnet: " + str(test[2]) + '\nSubnetMask: ' + str(test[3]) + "\nClass: " + str(test[4]) + '\n ------------------------------------------------------- \n' + "```")
+            else:
+                await message.channel.send("```# of subnets: " + str(test[1]) + "\n# of Hosts per Subnet: " + str(test[2]) + "\nSubnetMask: " + str(test[3]) + "\nClass: " + str(test[4]) + '\n ------------------------------------------------------- \n' + test[5] + "```")
 
         if message.content.startswith('$urban '):
             userMessage = message.content[7:]
@@ -89,13 +117,9 @@ class MyClient(discord.Client):
         # Binary AND/OR/XOR
         if message.content.startswith('$binary '):
             userMessage = message.content[7:].split() # Grabs data from user
-            test = BinaryModifications.binaryPrep(message, userMessage)
+            test = binaryPrep(message, userMessage)
             if test != 0:
-                # BUG:: Would place the join's in the message.channel command, but Discord recieves the message twice
-                andBinary = ''.join(binAnd.binaryAnd(test))
-                orBinary = ''.join(binOr.binaryOr(test))
-                xorBinary = ''.join(binXor.binaryXor(test))
-                await message.channel.send('The Results Are: ```NUM1: ' + test[0] + '\nNUM2: ' + test[1] + '\n -------------------' + '\nAND: ' + andBinary + '\nOR: ' + orBinary + '\nXOR: ' + xorBinary + '```')
+                await message.channel.send('The Results Are: ```NUM1: ' + test[0] + '\nNUM2: ' + test[1] + '\n -------------------' + '\nAND: ' + ''.join(binAnd.binaryAnd(test)) + '\nOR: ' + ''.join(binOr.binaryOr(test)) + '\nXOR: ' + ''.join(binXor.binaryXor(test)) + '```')
             else:
                 await message.channel.send('There has been an error! Please check your inputs...')
 

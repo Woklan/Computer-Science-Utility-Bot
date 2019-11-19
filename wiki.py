@@ -1,6 +1,4 @@
-import urllib.request
-from bs4 import BeautifulSoup
-import json
+from ExtraFunctions import URLFormat, pageGet, displayFormatting
 
 '''
 TODO --------------------------------
@@ -11,35 +9,18 @@ def wikiSearch(searchInput):
     apiUrl = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles="
     userUrl = "https://en.wikipedia.org/wiki/"
 
-    titleSearch = ""
-
     returnDataArray = []
 
-    userSearchSplit = searchInput.split(" ")
+    # [Title, apiUrl, userUrl]
+    returnArray = URLFormat(searchInput, apiUrl, userUrl)
 
-    # Prepares the User Search to be placed into URL's
-    for x in range(len(userSearchSplit)):
-        word = userSearchSplit[x]
-        capWord = str(word).capitalize()
-        titleSearch = titleSearch + capWord
+    returnDataArray.append(returnArray[0])
+    returnDataArray.append(returnArray[2])
 
-        apiUrl = apiUrl + capWord
-        userUrl = userUrl + capWord
-
-        if len(userSearchSplit) > x + 1:
-            apiUrl = apiUrl + "%20"
-            userUrl = userUrl + "%20"
-
-            titleSearch = titleSearch + " "
-
-    returnDataArray.append(titleSearch)
-    returnDataArray.append(userUrl)
-
-    # Grabs the page from the wikipedia API, and prepares for operation
-    pageObject = urllib.request.urlopen(apiUrl)
-    page = BeautifulSoup(pageObject, "lxml")
-    stringPage = str(page)[15:-18]
-    datastore = json.loads(stringPage)
+    # [stringPage, datastore]
+    returnArray = pageGet(returnArray[1])
+    stringPage = returnArray[0]
+    datastore = returnArray[1]
 
     if "\",\"missing\"" in stringPage:
         returnDataArray.append("This page cannot be found...")
@@ -54,17 +35,5 @@ def wikiSearch(searchInput):
         # Grabs main paragraph, cutting away extra html
         data = list(datastore["query"]["pages"].values())[0]["extract"]
 
-        charCount = 0
-        reformat = data.split(".")
-
-        formattedParagraph = ""
-
-        # Keeps on placing sentances until one goes over the limit
-        for x in range(len(reformat)):
-            charCount = charCount + len(reformat[x]) + 2
-
-            if charCount < 1024:
-                formattedParagraph = formattedParagraph + reformat[x] + '. '
-
-        returnDataArray.append(formattedParagraph)
+        returnDataArray.append(displayFormatting(data))
         return returnDataArray
